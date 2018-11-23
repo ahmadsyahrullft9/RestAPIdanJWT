@@ -10,7 +10,7 @@ class Rest{
 
     public function __construct(){
         if($_SERVER['REQUEST_METHOD'] !== 'POST'){
-            $this->throwError(REQUEST_METHOD_NOT_VALID, "request method is not valid.");
+            $this->throwError(REQUEST_METHOD_NOT_VALID, 'request method tidak valid, gunakan hanya method post saja.');
         }
         $handler = fopen('php://input', 'r');
         $this->request = stream_get_contents($handler);
@@ -19,17 +19,17 @@ class Rest{
 
     public function validateRequest(){
         if($_SERVER['CONTENT_TYPE'] !== 'application/json'){
-            $this->throwError(REQUEST_CONTENTTYPE_NOT_VALID, "request content type is not valid.");
+            $this->throwError(REQUEST_CONTENTTYPE_NOT_VALID, 'request content type tidak valid, gunakan hanya application/json saja.');
         }
 
         $data = json_decode($this->request, true);
         if(!isset($data['name']) || $data['name'] == ''){
-            $this->throwError(API_NAME_REQUIRED, 'api name is required.');
+            $this->throwError(API_NAME_REQUIRED, 'name api masih kosong.');
         }
         $this->serviceName = $data['name'];
 
-        if(!is_array($data['param'])){
-            $this->throwError(API_PARAM_REQUIRED, 'api param is required.');
+        if(!isset($data['param']) || !is_array($data['param'])){
+            $this->throwError(API_PARAM_REQUIRED, 'param api masih kosong.');
         }
         $this->param = $data['param'];
     }
@@ -39,38 +39,41 @@ class Rest{
        $rMethod = new reflectionMethod('API', $this->serviceName);
 
        if(!method_exists($api, $this->serviceName)){
-           $this->throwError(API_DOST_NOT_EXIST, 'Api does not exist.');
+           $this->throwError(API_DOST_NOT_EXIST, 'service name api masih kosong.');
        }
        $rMethod->invoke($api);
     }
 
-    public function validateParameter($fieldName, $value, $dataType, $required = true){
-        if($required && empty($value)){
-            $this->throwError(VALIDATE_PARAMETER_REQUIRED, $fieldName.' parameter is required.');
+    public function validateParameter($fieldName, $dataType, $required = true){
+        if(!isset($this->param[$fieldName])){
+            $this->throwError(VALIDATE_PARAMETER_REQUIRED, 'parameter '.$fieldName.' masih kosong.');
+        }
+        if($required && empty($this->param[$fieldName])){
+            $this->throwError(VALIDATE_PARAMETER_REQUIRED, 'parameter '.$fieldName.' masih kosong.');
         }
         switch ($dataType) {
             case BOOLEAN:
-                if(!is_bool($value)){
-                    $this->throwError(VALIDATE_PARAMETER_DATATYPE, 'datatype of parameter is not valid for '.$fieldName.'. It should be boolean');
+                if(!is_bool($this->param[$fieldName])){
+                    $this->throwError(VALIDATE_PARAMETER_DATATYPE, 'tipe data dari parameter '.$fieldName.' tidak valid. gunakan boolean.');
                 }
                 break;
             case INTEGER:
-                if(!is_numeric($value)){
-                    $this->throwError(VALIDATE_PARAMETER_DATATYPE, 'datatype of parameter is not valid for '.$fieldName.'. It should be numeric');
+                if(!is_numeric($this->param[$fieldName])){
+                    $this->throwError(VALIDATE_PARAMETER_DATATYPE, 'tipe data dari parameter '.$fieldName.' tidak valid. gunakan numerik.');
                 }
                 break;
             case STRING:
-                if(!is_string($value)){
-                    $this->throwError(VALIDATE_PARAMETER_DATATYPE, 'datatype of parameter is not valid for '.$fieldName.'. It should be string');
+                if(!is_string($this->param[$fieldName])){
+                    $this->throwError(VALIDATE_PARAMETER_DATATYPE, 'tipe data dari parameter '.$fieldName.' tidak valid. gunakan string.');
                 }
                 break;
             default:
-                if(!is_string($value)){
-                    $this->throwError(VALIDATE_PARAMETER_DATATYPE, 'datatype of parameter is not valid for '.$fieldName);
+                if(!is_string($this->param[$fieldName])){
+                    $this->throwError(VALIDATE_PARAMETER_DATATYPE, 'tipe data dari parameter '.$fieldName.' tidak valid.');
                 }
                 break;
         }
-        return $value;
+        return $this->param[$fieldName];
     }
 
     public function throwError($code, $message){
@@ -108,7 +111,7 @@ class Rest{
                 return $matches[1];
             }
         }
-        $this->throwError(ATHORIZATION_HEADER_NOT_FOUND, 'access token not found.');
+        $this->throwError(ATHORIZATION_HEADER_NOT_FOUND, 'token tidak valid, akses ditolak.');
     }
 }
 
