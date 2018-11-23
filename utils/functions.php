@@ -1,0 +1,15 @@
+<?php
+
+spl_autoload_register(function($className){
+    $path = './'.strtolower($className).'.php';
+    if(file_exists($path)){
+        require_once($path);
+    }else{
+        $path = './models/'.strtolower($className).'.php';
+        if(file_exists($path)){
+            require_once($path);
+        }else{
+            echo 'file '.$className.' not found.';
+        }
+    }
+});
